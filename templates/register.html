@@ -1,0 +1,57 @@
+{% extends "main.html" %}
+
+{% block title %}Регистрация{% endblock %}
+{% block content_info %}Регистрация{% endblock %}
+{% block content %}
+<form action="" method="post" style="margin-left: 150px">
+  {{ form.hidden_tag() }}
+  {{ form.csrf_token }}
+  {% if message %}
+  <div class="form-group">
+    <p class="alert alert-danger">{{message}}</p>
+  </div>
+  {% endif %}
+  <div class="form-group">
+    <label class="text-white">{{ form.email.label }}</label>
+    {{ form.email(class="form-control", type="email") }}
+    <small class="form-text text-muted">Вашу почту никто не увидит</small>
+    {% for error in form.email.errors %}
+        <p class="alert alert-danger" role="alert" style="margin: 10px 0;">
+            {{ error }}
+        </p>
+    {% endfor %}
+  </div>
+  <div class="form-group">
+    <label class="text-white">{{ form.password.label }}</label>
+    {{ form.password(class="form-control", type="password") }}
+    {% for error in form.password.errors %}
+        <p class="alert alert-danger" role="alert" style="margin: 10px 0;">
+            {{ error }}
+        </p>
+    {% endfor %}
+  </div>
+  <div class="form-group">
+    <label class="text-white">{{ form.password_repeat.label }}</label>
+    {{ form.password_repeat(class="form-control", type="password") }}
+    {% for error in form.password_repeat.errors %}
+        <p class="alert alert-danger" role="alert" style="margin: 10px 0;">
+            {{ error }}
+        </p>
+    {% endfor %}
+  </div>
+  <div class="form-group">
+    <label class="text-white">{{ form.username.label }}</label>
+    {{ form.username(class="form-control") }}
+    <small class="form-text text-muted">Это имя будет показано другим пользователям</small>
+    {% for error in form.username.errors %}
+        <p class="alert alert-danger" role="alert" style="margin: 10px 0;">
+            {{ error }}
+        </p>
+    {% endfor %}
+  </div>
+  <div class="form-group form-check">
+    {{ form.remember_me(class="form-check-input") }}
+    <label class="form-check-label text-white">{{ form.remember_me.label }}</label>
+  </div>
+  {{ form.submit(type="submit", class="btn btn-primary") }}
+{% endblock %}
