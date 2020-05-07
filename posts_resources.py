@@ -23,6 +23,11 @@ def abort_if_unauthorized(token):
 def abort_if_cant_read(post_id, token):
     session = db_session.create_session()
     post = session.query(Post).get(post_id)
+    if token == "guest":
+        if post.is_private:
+            abort(403, message=f"Can't read post {post_id}")
+        else:
+            return
     user_id = get_user(token).id
     if post.is_private:
         if post.author == user_id:
