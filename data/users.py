@@ -15,6 +15,7 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     email = sqlalchemy.Column(sqlalchemy.String, unique=True, index=True)
     password_hash = sqlalchemy.Column(sqlalchemy.String)
     api_token = sqlalchemy.Column(sqlalchemy.String, nullable=True, unique=True)
+    yandex_id = sqlalchemy.Column(sqlalchemy.Integer, nullable=True, unique=True)
 
     about = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     pfp = sqlalchemy.Column(sqlalchemy.String, default='default_pfp.png')

@@ -15,6 +15,18 @@ function login_check(ondiscard) {
   }
 }
 
+function like(post_id) {
+  $.ajax({
+    url: "/action/",
+    method: "post",
+    data: {
+      action: "like",
+      post_id: post_id
+    }
+  })
+  $('#post-' + post_id + ' .likebtn').toggleClass('liked');
+}
+
 $(document).ready(function () {
   $('#loginModal').on('hidden.bs.modal', function (e) {
     window.location.replace('/');

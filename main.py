@@ -1,5 +1,5 @@
 import flask
-from flask import url_for, render_template, request, send_from_directory, redirect
+from flask import url_for, render_template, request, send_from_directory, redirect, abort
 from flask_restful import Api
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 
@@ -10,6 +10,7 @@ import posts_resources
 import users_resources
 from login_form import LoginForm
 from register_form import RegisterForm
+from settings_form import SettingsForm
 
 import requests as rq
 import datetime
@@ -43,6 +44,54 @@ def load_user(user_id):
     return session.query(User).get(user_id)
 
 
+@app.route('/login/redirect/')
+def login_redirect():
+    if 'token' in request.data:
+        flask.session['token'] = request.data['token']
+    else:
+        return f'Вы будете перенаправлены в скором времени...<script src={url_for("static", filename="js/login.js")}></script>'
+
+
+@app.route('/register/', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect('/')
+    form = RegisterForm()
+    if form.validate_on_submit():
+        session = db_session.create_session()
+        wrong = False
+        if session.query(User).filter(User.email == form.email.data).first():
+            form.email.errors.append("Этот почтовый адрес уже используется")
+            wrong = True
+        if session.query(User).filter(User.username == form.username.data).first():
+            form.username.errors.append("Этот логин уже используется")
+            wrong = True
+        if wrong:
+            return render_template('register.html', form=form)
+        user = User(email=form.email.data, username=form.username.data)
+        user.set_password(form.password.data)
+        session.add(user)
+        session.commit()
+        login_user(user, remember=form.remember_me.data)
+        return redirect('/')
+    return render_template('register.html', form=form)
+
+
+@app.route('/login/', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect('/')
+    form = LoginForm()
+    if form.validate_on_submit():
+        session = db_session.create_session()
+        user = session.query(User).filter(User.email == form.email.data).first()
+        if user and user.check_password(form.password.data):
+            login_user(user, remember=form.remember_me.data)
+            return redirect("/")
+        return render_template('login.html', message="Неправильный логин или пароль", form=form)
+    return render_template('login.html', form=form)
+
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'GET':
@@ -56,65 +105,8 @@ def index():
             posts = session.query(Post).order_by(Post.id.desc())
         posts = posts.filter(Post.is_private == False).limit(20)
         for post in posts:
-            out += render_template('post.html', post=post)
+            out += render_template('post.html', post=post, len=len)
         return out
-
-
-@app.route('/settings/', methods=['GET', 'POST'])
-def settings():
-
-    return render_template('settings.html')
-
-
-@app.route('/login/', methods=['GET', 'POST'])
-def login():
-    form = LoginForm()
-    if form.validate_on_submit():
-        session = db_session.create_session()
-        user = session.query(User).filter(User.email == form.email.data).first()
-        if user and user.check_password(form.password.data):
-            login_user(user, remember=form.remember_me.data)
-            return redirect("/")
-        return render_template('login.html',
-                               message="Неправильный логин или пароль",
-                               form=form)
-    return render_template('login.html', form=form)
-
-
-@app.route('/register/', methods=['GET', 'POST'])
-def register():
-    form = RegisterForm()
-    if form.validate_on_submit():
-        session = db_session.create_session()
-        wrong = False
-        if session.query(User).filter(User.email == form.email.data).first():
-            form.email.errors.append("Этот почтовый адрес уже используется")
-            wrong = True
-        if session.query(User).filter(User.username == form.username.data).first():
-            form.username.errors.append("Этот логин уже используется")
-            wrong = True
-        if form.password.data != form.password_repeat.data:
-            form.password_repeat.errors.append("Пароли не совпадают")
-            wrong = True
-        if len(form.password.data) < 8:
-            form.password.errors.append("Пароль должен быть длиннее 7 символов")
-            wrong = True
-        if wrong:
-            return render_template('register.html', form=form)
-        user = User(email=form.email.data, username=form.username.data)
-        user.set_password(form.password.data)
-        session.add(user)
-        session.commit()
-        login_user(user, remember=form.remember_me.data)
-        return redirect('/')
-    return render_template('register.html', form=form)
-
-
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    return redirect("/")
 
 
 @app.route('/feed/', methods=['GET', 'POST'])
@@ -133,30 +125,58 @@ def feed():
             for post in posts:
                 if request.form['show_privates']:
                     if post.author in current_user.subscribed_to or post.user == current_user or post.reply_to.user == current_user:
-                        out += render_template('post.html', post=post)
+                        out += render_template('post.html', post=post, len=len)
                         i += 1
                         if i == 20:
                             break
                 else:
-                    if (post.author in current_user.subscribed_to or post.user == current_user) and not post.is_private:
-                        out += render_template('post.html', post=post)
+                    if (post.author in current_user.subscribed_to or post.user == current_user or post.reply_to.user == current_user) and not post.is_private:
+                        out += render_template('post.html', post=post, len=len)
                         i += 1
                         if i == 20:
                             break
         return out
 
 
-@app.route('/login/redirect/')
-def login_redirect():
-    if 'token' in request.data:
-        flask.session['token'] = request.data['token']
-    else:
-        return f'Вы будете перенаправлены в скором времени...<script src={url_for("static", filename="js/login.js")}></script>'
+@app.route('/blogs/', methods=['GET', 'POST'])
+def blogs():
+    return redirect('/')
+
+
+@app.route('/settings/', methods=['GET', 'POST'])
+def settings():
+    #  form = SettingsForm()
+    return render_template('settings.html')
+
+
+@app.route('/action/', methods=['POST'])
+def action():
+    if request.form['action'] == 'like':
+        if request.form['post_id']:
+            session = db_session.create_session()
+            post = session.query(Post).get(request.form['post_id'])
+            if not post:
+                abort(404)
+            if current_user.id in post.liked:
+                post.liked = post.liked ^ {current_user.id}
+            else:
+                post.liked = post.liked | {current_user.id}
+            session.commit()
+    elif request.form['action'] == 'post':
+        pass
+    return 'OK'
 
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect("/")
 
 
 if __name__ == '__main__':

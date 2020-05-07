@@ -5,6 +5,10 @@ body { margin: 0; overflow-x: hidden;}
   --transparent-white-15: rgba(255, 255, 255, 0.15);
 }
 
+a {
+  cursor: pointer;
+}
+
 #background {
   width: 100vw;
   height: 100vh;
@@ -123,11 +127,36 @@ body { margin: 0; overflow-x: hidden;}
 .post-text {
   padding: 10px 20px;
   width: 100%;
-  height: 100%;
+  height: calc(100% - 75px);
+}
+
+.post-footer {
+  width: 100%;
+  height: 50px;
+  position: relative;
+}
+
+.post-footer > span {
+  position: absolute;
+  top: 50%;
+  transform: translate(0, -25%);
+  font-weight: 700;
+  margin-left: 10px;
+}
+
+.post-footer > a {
+  font-size: 30px;
+  color: gray;
+  margin: 10px 10px;
+  float: right;
+}
+
+.liked {
+  color: red !important;
 }
 
 #content-info {
-  font-size: 50px;
+  font-size: 40px;
   font-weight: bold;
   color: whitesmoke;
   margin-left: 150px;

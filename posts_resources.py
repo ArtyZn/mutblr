@@ -64,7 +64,7 @@ class PostResource(Resource):
         abort_if_cant_read(post_id, args['token'])
         session = db_session.create_session()
         post = session.query(Post).get(post_id)
-        return jsonify(post.to_dict(only=('id', 'content', 'author', 'user.username', 'user.pfp', 'is_private', 'attachments', 'tags', 'liked')))
+        return jsonify(post.to_dict(only=('id', 'content', 'author', 'user.username', 'is_private', 'attachments', 'tags', 'liked')))
 
     def post(self, post_id):
         parser = reqparse.RequestParser()
@@ -105,50 +105,24 @@ class PostListResource(Resource):
     def get(self):
         parser = reqparse.RequestParser()
         parser.add_argument('token', required=True, type=str)
-        parser.add_argument('feed', type=bool)
         parser.add_argument('limit', type=int)
         parser.add_argument('offset', type=int)
         parser.add_argument('author', type=int)
         args = parser.parse_args()
         abort_if_unauthorized(args['token'])
+        user = get_user(args['token'])
         session = db_session.create_session()
-        limit = 20
-        offset = 0
-        posts = []
-        if args['limit'] and 0 < args['limit'] < 20:
-            limit = args['limit']
-        if args['offset'] and 0 < args['offset']:
-            offset = args['offset']
-        if args['feed']:
-            user_id = get_user(args['token']).id
-            if args['author']:
-                for post in session.query(User).get(args['author']).posts:
-                    if not post.is_private or post.author == user_id or (post.reply_to and session.query(Post).get(post.reply_to).author == user_id):
-                        posts.append(post)
-                        if len(posts) == offset + limit:
-                            break
-            else:
-                for post in session.query(Post):
-                    if not post.is_private or post.author == user_id or (post.reply_to and session.query(Post).get(post.reply_to).author == user_id):
-                        posts.append(post)
-                        if len(posts) == offset + limit:
-                            break
-        else:
-            if args['author']:
-                for post in session.query(User).get(args['author']).posts:
-                    if not post.is_private:
-                        posts.append(post)
-                        if len(posts) == offset + limit:
-                            break
-            else:
-                for post in session.query(Post):
-                    if not post.is_private:
-                        posts.append(post)
-                        if len(posts) == offset + limit:
-                            break
-        posts = posts[offset:offset + limit]
-        return jsonify({'posts': [item.to_dict(only=('id', 'content', 'author', 'user.username', 'user.pfp', 'is_private', 'attachments', 'tags', 'liked'))
-                                  for item in posts]})
+        limit = int(args['limit']) if args['limit'] else 20
+        offset = int(args['offset']) if args['offset'] else 0
+        posts = session.query(Post).order_by(Post.id.desc())
+        out = []
+        for post in posts:
+            if (not post.is_private or post.user == user or post.reply_to.user == user) and (not args['author'] or post.author == int(args['author'])):
+                out += [post]
+                if len(out) == offset + limit:
+                    break
+        return jsonify({'posts': [item.to_dict(only=('id', 'content', 'author', 'user.username', 'is_private', 'attachments', 'tags', 'liked'))
+                                  for item in out[offset:]]})
 
     def post(self):
         parser = reqparse.RequestParser()
@@ -174,6 +148,8 @@ class PostListResource(Resource):
                 post.reply_to = args['reply_to']
                 if reply_post.is_private:
                     post.is_private = True
+        else:
+            post.reply_to_id = session.query(Post).order_by(Post.id.desc()).first().id + 1
         session.add(post)
         session.commit()
         return jsonify({'success': 'OK'})
