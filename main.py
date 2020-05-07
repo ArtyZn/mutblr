@@ -54,17 +54,7 @@ def index():
             posts = session.query(Post).order_by(Post.id.desc()).filter(Post.id < int(request.form['offset']))
         else:
             posts = session.query(Post).order_by(Post.id.desc())
-        if current_user.is_authenticated:
-            i = 0
-            for post in posts:
-                if not post.is_private or post.user == current_user or post.reply_to.user == current_user:
-                    out += render_template('post.html', post=post)
-                    i += 1
-                    if i == 20:
-                        return out
-            return out
-        else:
-            posts = posts.filter(Post.is_private == False).limit(20)
+        posts = posts.filter(Post.is_private == False).limit(20)
         for post in posts:
             out += render_template('post.html', post=post)
         return out
@@ -141,11 +131,18 @@ def feed():
         if current_user.is_authenticated:
             i = 0
             for post in posts:
-                if post.author in current_user.subscribed_to and (not post.is_private or post.user == current_user or post.reply_to.user == current_user):
-                    out += render_template('post.html', post=post)
-                    i += 1
-                    if i == 20:
-                        break
+                if request.form['show_privates']:
+                    if post.author in current_user.subscribed_to or post.user == current_user or post.reply_to.user == current_user:
+                        out += render_template('post.html', post=post)
+                        i += 1
+                        if i == 20:
+                            break
+                else:
+                    if (post.author in current_user.subscribed_to or post.user == current_user) and not post.is_private:
+                        out += render_template('post.html', post=post)
+                        i += 1
+                        if i == 20:
+                            break
         return out
 
 

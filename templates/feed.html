@@ -1,24 +1,15 @@
 {% extends "main.html" %}
 
 {% block title %}Новости{% endblock %}
-{% block content_info %}Ваша лента{% endblock %}
-{% block script %}
-function load_posts() {
-  let resp = $.ajax({
-    url: "/feed/",
-    method: "post",
-    data: {
-      offset: $(".post").length ? $('.post').last()[0].id.slice(5) : null
-    },
-    success: function (resp) {
-      $('#posts').append(resp);
-
-    }
-  });
-}
+{% block content_info %}Ваша лента
+<span class="custom-control custom-switch">
+  <input type="checkbox" class="custom-control-input" id="show_privates_switch" onclick="reload_posts()">
+  <label style="font-size: 12px" class="custom-control-label" for="show_privates_switch">Показывать приватные посты</label>
+</span>
 {% endblock %}
-
-{% block onload %}login_check(){% endblock %}
+{% block script %}
+{{ url_for('static', filename='js/feed.js') }}
+{% endblock %}
 
 {% block content %}
 <div id="posts"></div>

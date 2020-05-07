@@ -3,21 +3,8 @@
 {% block title %}Главная{% endblock %}
 {% block content_info %}Популярное сегодня{% endblock %}
 {% block script %}
-function load_posts() {
-  let resp = $.ajax({
-    url: "/",
-    method: "post",
-    data: {
-      offset: $(".post").length ? $('.post').last()[0].id.slice(5) : null
-    },
-    success: function (resp) {
-      $('#posts').append(resp);
-
-    }
-  });
-}
+{{ url_for('static', filename='js/index.js') }}
 {% endblock %}
-
 
 {% block content %}
 <div id="posts"></div>

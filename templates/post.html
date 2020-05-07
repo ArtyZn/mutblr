@@ -2,7 +2,43 @@
   <div class="post-author rounded-circle">
     <img src="/uploads/{{ post.user.pfp }}">
   </div>
-  <div class="post-content rounded text-break">
-    {{ post.content }}
+  <div class="post-content rounded{% if post.reply_to_id != post.id %}-top{% endif %} text-break">
+    <div class="post-info">
+      {{ post.user.username }} {% if post.is_private %}(private){% endif %}
+      <a class="post-options fas fa-ellipsis-h" data-toggle="dropdown">
+
+      </a>
+      <div class="dropdown-menu">
+        <a class="dropdown-item" href="#">Action</a>
+        <a class="dropdown-item" href="#">Another action</a>
+        <a class="dropdown-item" href="#">Something else here</a>
+      </div>
+    </div>
+    <div class="post-text">
+      {{ post.content }}
+    </div>
   </div>
 </div>
+{% if post.reply_to_id != post.id %}
+<div class="post" id="post-{{ post.id }}" style="margin-top: -75px;">
+  <div class="post-author rounded-circle">
+    <img src="/uploads/{{ post.user.pfp }}">
+  </div>
+  <div class="post-content rounded-bottom text-break">
+    <div class="post-info">
+      {{ post.reply_to.user.username }} {% if post.reply_to.is_private %}(private){% endif %}
+      <a class="post-options fas fa-ellipsis-h" data-toggle="dropdown">
+
+      </a>
+      <div class="dropdown-menu">
+        <a class="dropdown-item" href="#">Action</a>
+        <a class="dropdown-item" href="#">Another action</a>
+        <a class="dropdown-item" href="#">Something else here</a>
+      </div>
+    </div>
+    <div class="post-text">
+      {{ post.reply_to.content }}
+    </div>
+  </div>
+</div>
+{% endif %}

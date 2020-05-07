@@ -9,6 +9,7 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
     <script src="https://kit.fontawesome.com/1f6307a674.js" crossorigin="anonymous"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/jquery.cookie.js') }}" ></script>
+    <script type="text/javascript" src="{% block script %}{% endblock %}" ></script>
 
     <title>{% block title %}{% endblock %} - Mutblr</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" >
@@ -25,12 +26,9 @@
     }
     </script>
     {% endif %}
-    <script>
-    {% block script %}{% endblock %}
-    </script>
   </head>
 
-  <body onload="{% block onload %}{% endblock %}">
+  <body>
     <div id="background"></div>
     <div id="main-wrapper">
       <div id="nav-wrapper">
