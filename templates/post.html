@@ -4,7 +4,7 @@
   </div>
   <div class="post-content rounded{% if post.reply_to_id != post.id %}-top{% endif %} text-break">
     <div class="post-info">
-      {{ post.user.username }} {% if post.is_private %}(private){% endif %}
+      <span class="username">{{ post.user.username }}</span> {% if post.is_private %}(private){% endif %}
       <a class="post-options fas fa-ellipsis-h" data-toggle="dropdown"></a>
       <div class="dropdown-menu">
         <a class="dropdown-item" href="#">Action</a>
@@ -29,7 +29,7 @@
   </div>
   <div class="post-content rounded-bottom text-break">
     <div class="post-info">
-      {{ post.reply_to.user.username }} {% if post.reply_to.is_private %}(private){% endif %}
+      <span class="username">{{ post.reply_to.user.username }}</span> {% if post.reply_to.is_private %}(private){% endif %}
       <a class="post-options fas fa-ellipsis-h" data-toggle="dropdown"></a>
       <div class="dropdown-menu">
         <a class="dropdown-item" href="#">Action</a>

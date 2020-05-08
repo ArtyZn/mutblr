@@ -1,5 +1,6 @@
 import flask
 from flask import url_for, render_template, request, send_from_directory, redirect, abort
+from werkzeug.utils import secure_filename
 from flask_restful import Api
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 
@@ -13,8 +14,10 @@ from register_form import RegisterForm
 from settings_form import SettingsForm
 
 import requests as rq
+from PIL import Image
 import datetime
 import json
+import io
 
 
 app = flask.Flask(__name__)
@@ -22,7 +25,7 @@ api = Api(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 app.config['SECRET_KEY'] = 'howthefuckisthiscodeworking'
-app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['UPLOAD_FOLDER'] = 'uploads/'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(days=365)
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
@@ -32,10 +35,21 @@ api.add_resource(posts_resources.PostListResource, '/api/posts')
 api.add_resource(users_resources.UsersResource, '/api/users/<int:user_id>')
 
 
+def replace_symbols(text, replace_map={}):
+    for char in replace_map:
+        text.replace(char, replace_map[char])
+    return text
+
+
 def get_yandex_user(token):
     r = rq.get('https://login.yandex.ru/info?format=json&oauth_token=' + str(token))
     if r.text:
         return json.loads(r.text)
+
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 @login_manager.user_loader
@@ -46,10 +60,31 @@ def load_user(user_id):
 
 @app.route('/login/redirect/')
 def login_redirect():
-    if 'token' in request.data:
-        flask.session['token'] = request.data['token']
+    if 'token' in request.args:
+        if current_user.is_authenticated:
+            yandex_user = get_yandex_user(request.args['token'])
+            if not yandex_user:
+                return redirect('/')
+            yandex_id = yandex_user['id']
+            session = db_session.create_session()
+            user = session.query(User).get(current_user.id)
+            user.yandex_id = yandex_id
+            session.commit()
+            return redirect('/settings/')
+        else:
+            yandex_user = get_yandex_user(request.args['token'])
+            if not yandex_user:
+                return redirect('/')
+            yandex_id = yandex_user['id']
+            session = db_session.create_session()
+            user = session.query(User).filter(User.yandex_id == yandex_id).first()
+            if user:
+                login_user(user, remember=True)
+                return redirect('/settings/')
+            else:
+                return redirect('/register/')
     else:
-        return f'Вы будете перенаправлены в скором времени...<script src={url_for("static", filename="js/login.js")}></script>'
+        return f'Вы будете перенаправлены в скором времени...<script src={url_for("static", filename="js/yandex_login.js")}></script>'
 
 
 @app.route('/register/', methods=['GET', 'POST'])
@@ -145,14 +180,31 @@ def blogs():
 
 @app.route('/settings/', methods=['GET', 'POST'])
 def settings():
-    #  form = SettingsForm()
-    return render_template('settings.html')
+    form = SettingsForm()
+    if form.validate_on_submit() and current_user.is_authenticated:
+        session = db_session.create_session()
+        user = session.query(User).get(current_user.id)
+        if session.query(User).filter(User.username == form.username.data).first():
+            form.username.errors.append('Этот логин уже используется')
+            return render_template('settings.html', form=form, current_user=user)
+        user.username = form.username.data
+        user.about = form.about.data
+        if form.pfp.data:
+            filename = str(current_user.id) + "_pfp.png"
+            img = Image.open(io.BytesIO(form.pfp.data.stream.read()))
+            img.thumbnail((128, 128))
+            img.save(app.config['UPLOAD_FOLDER'] + filename, "PNG")
+            user.pfp = filename
+        session.commit()
+        return render_template('settings.html', form=form, current_user=user), 201
+    return render_template('settings.html', form=form)
 
 
+@login_required
 @app.route('/action/', methods=['POST'])
 def action():
     if request.form['action'] == 'like':
-        if request.form['post_id']:
+        if 'post_id' in request.form:
             session = db_session.create_session()
             post = session.query(Post).get(request.form['post_id'])
             if not post:
@@ -163,7 +215,22 @@ def action():
                 post.liked = post.liked | {current_user.id}
             session.commit()
     elif request.form['action'] == 'post':
-        pass
+        if 'content' in request.form:
+            session = db_session.create_session()
+            post = Post(author=current_user.id, content=request.form['content'])
+            print(0)
+            if 'reply_to' in request.form:
+                reply_post = session.query(Post).get(int(request.form['reply_to']))
+                if reply_post and (reply_post.is_private or reply_post.reply_to.is_private) and not (reply_post.user == current_user or reply_post.reply_to.user == current_user):
+                    post.reply_to_id = session.query(Post).order_by(Post.id.desc()).first().id + 1
+                elif reply_post:
+                    post.reply_to_id = reply_post.id
+                else:
+                    post.reply_to_id = session.query(Post).order_by(Post.id.desc()).first().id + 1
+            else:
+                post.reply_to_id = session.query(Post).order_by(Post.id.desc()).first().id + 1
+            session.add(post)
+            session.commit()
     return 'OK'
 
 

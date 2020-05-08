@@ -1,0 +1,26 @@
+#content-info {
+  width: 950px;
+}
+
+#content-wrapper {
+  flex-direction: row !important;
+  flex-wrap: wrap;
+}
+
+#settings-preview {
+  width: 140px;
+  height: 500px;
+  margin-right: 10px;
+}
+
+#settings-preview > span {
+  margin-top: 10px;
+  text-align: center;
+  width: 140px;
+  display: inline-block;
+}
+
+#settings-preview > span > span {
+  font-weight: 700;
+  color: black;
+}

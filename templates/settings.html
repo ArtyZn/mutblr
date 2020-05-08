@@ -2,12 +2,51 @@
 
 {% block title %}Настройки{% endblock %}
 {% block content_info %}Настройки {{ current_user.username }}{% endblock %}
-{% block onload %}login_check(){% endblock %}
+
+{% block script %}
+{{ url_for('static', filename='js/settings.js') }}
+{% endblock %}
+
+{% block style %}
+{{ url_for('static', filename='css/settings.css') }}
+{% endblock %}
 
 {% block content %}
-<form id="settings">
-  <div id="settings-pfp">
-
+{% set f = form.about.process_data(current_user.about) %}
+<div id="settings-preview">
+  <img src="/uploads/{{ current_user.pfp }}" class="rounded-circle" style="width: 140px; height: 140px;">
+  <span><span class="username badge badge-secondary">{{ current_user.username }}</span></span>
+</div>
+<form action="/settings/" method="post" id="settings" enctype="multipart/form-data" style="width: 800px;">
+  {{ form.hidden_tag() }}
+  {{ form.csrf_token }}
+  <div class="form-group">
+    {{ form.username.label(class="text-white") }}
+    {{ form.username(class="form-control", value=current_user.username) }}
+    {% for error in form.username.errors %}
+        <p class="alert alert-danger" role="alert" style="margin: 10px 0;">
+            {{ error }}
+        </p>
+    {% endfor %}
   </div>
+  <div class="form-group">
+    {{ form.pfp.label(class="text-white") }}
+    <div class="custom-file">
+      {{ form.pfp(class="form-control custom-file-input", id="pfpFile") }}
+      <label class="custom-file-label" for="pfpFile">Загрузите файл</label>
+    </div>
+  </div>
+  <div class="form-group">
+    {{ form.about.label(class="text-white") }}
+    {{ form.about(class="form-control") }}
+    {% for error in form.about.errors %}
+        <p class="alert alert-danger" role="alert" style="margin: 10px 0;">
+            {{ error }}
+        </p>
+    {% endfor %}
+  </div>
+  {{ form.submit(type="submit", class="btn btn-primary") }}
+  <a class="btn btn-warning" href="https://oauth.yandex.ru/authorize?response_type=token&client_id=ed85afc1f5ad48ed97373e897b2d3320">Привязать аккаунт Яндекс</a>
+  <a class="btn btn-danger" href="/logout" style="float: right;">Выйти аз аккаунта</a>
 </form>
 {% endblock %}

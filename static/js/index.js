@@ -11,3 +11,13 @@ function load_posts() {
     }
   });
 }
+
+$(document).ready(function () {
+  load_posts();
+  $(document).on('scroll', function () {
+    if ($(document).height() - $(window).scrollTop() - $(window).height() < 100 && last_post <= $(".post").length) {
+      last_post += 20;
+      load_posts();
+    }
+  });
+})
