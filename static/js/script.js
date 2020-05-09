@@ -1,22 +1,30 @@
 updInterval = setInterval(update, 500);
 
-var cur_user = {
-  username: null,
-  id: null
-}
-
 var users_info = {}
 
 var last_post = 0;
 
 function login_prompt() {
-  $('#login-modalodal').modal('toggle');
+  $('#login-modal').modal('toggle');
 }
 
 function login_check() {
-  if (!cur_user.id) {
-    login_prompt();
-  }
+  $.ajax({
+    url: "/action/",
+    method: "post",
+    data: {
+      action: "getcuruserid"
+    },
+    success: function (resp, a, b) {
+      console.log(resp);
+      console.log(a);
+      console.log(b);
+    },
+    error: function(e) {
+      console.log(e);
+      login_prompt();
+    }
+  })
 }
 
 function like(post_id) {
@@ -51,6 +59,7 @@ function update() {
   $('.username').on('mouseover', function(e) {
     username = $($(e)[0].target)[0].innerHTML;
     console.log(username);
+  });
 }
 
 $(document).ready(function () {

@@ -68,6 +68,9 @@ def login_redirect():
             yandex_id = yandex_user['id']
             session = db_session.create_session()
             user = session.query(User).get(current_user.id)
+            if session.query(User).filter(User.yandex_id == yandex_id).first():
+                session.query(User).filter(User.yandex_id == yandex_id).first().yandex_id = None
+                session.commit()
             user.yandex_id = yandex_id
             session.commit()
             return redirect('/settings/')
@@ -231,6 +234,13 @@ def action():
                 post.reply_to_id = session.query(Post).order_by(Post.id.desc()).first().id + 1
             session.add(post)
             session.commit()
+    elif request.form['action'] == 'getusercard':
+        pass
+    elif request.form['action'] == 'getcuruserid':
+        if current_user.is_authenticated:
+            return str(current_user.id)
+        else:
+            abort(401)
     return 'OK'
 
 

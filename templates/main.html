@@ -21,14 +21,6 @@
     <link rel="icon" sizes="32X32" href="{{ url_for('static', filename='img/favicon_32x32.png') }}">
     <link rel="icon" sizes="64X64" href="{{ url_for('static', filename='img/favicon_64x64.png') }}">
     <link rel="icon" sizes="128X128" href="{{ url_for('static', filename='img/favicon_128x128.png') }}">
-    {% if current_user.is_authenticated %}
-    <script>
-    cur_user = {
-      username: "{{ current_user.username }}",
-      id: "{{ current_user.id }}"
-    }
-    </script>
-    {% endif %}
   </head>
 
   <body>
@@ -93,6 +85,10 @@
                 <form action="#" id="post-modal-form">
                   <div class="form-group">
                     <textarea id="post-modal-form-content" class="form-control w-100"></textarea>
+                  </div>
+                  <div class="form-group form-check">
+                    <input type="checkbox" class="form-check-input">
+                    <label class="form-check-label">Приватный пост</label>
                   </div>
                 </form>
               </div>
