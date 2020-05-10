@@ -17,18 +17,9 @@ function subscribe(user_id) {
 
 function login_check() {
   $.ajax({
-    url: "/action/",
+    url: "/is_authenticated",
     method: "post",
-    data: {
-      action: "getcuruserid"
-    },
-    success: function (resp, a, b) {
-      console.log(resp);
-      console.log(a);
-      console.log(b);
-    },
     error: function(e) {
-      console.log(e);
       login_prompt();
     }
   })

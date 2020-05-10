@@ -25,6 +25,7 @@ api = Api(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 app.config['SECRET_KEY'] = 'howthefuckisthiscodeworking'
+app.config['TESTING'] = False
 app.config['UPLOAD_FOLDER'] = 'uploads/'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(days=365)
@@ -247,6 +248,8 @@ def user(user_id):
 @login_required
 @app.route('/user/<int:user_id>/subscribe', methods=["POST"])
 def user_subscribe(user_id):
+    if not current_user.is_authenticated:
+        abort(401)
     session = db_session.create_session()
     target = session.query(User).get(user_id)
     user = session.query(User).get(current_user.id)
@@ -265,6 +268,8 @@ def user_subscribe(user_id):
 def send_post():
     form = PostForm()
     if form.validate_on_submit():
+        if not current_user.is_authenticated:
+            abort(401)
         session = db_session.create_session()
         post = Post(author=current_user.id, content=form.content.data, tags=' ' + form.tags.data if form.tags.data else '', is_private=form.is_private.data)
         if form.reply_to.data:
@@ -316,6 +321,8 @@ def post(post_id):
 @login_required
 @app.route('/post/<int:post_id>/delete', methods=['POST'])
 def post_delete(post_id):
+    if not current_user.is_authenticated:
+        abort(401)
     session = db_session.create_session()
     post = session.query(Post).get(post_id)
     if current_user.id == post.author:
@@ -332,6 +339,8 @@ def post_delete(post_id):
 @login_required
 @app.route('/post/<int:post_id>/like', methods=['POST'])
 def post_like(post_id):
+    if not current_user.is_authenticated:
+        abort(401)
     session = db_session.create_session()
     post = session.query(Post).get(post_id)
     if not post:
@@ -341,6 +350,7 @@ def post_like(post_id):
     else:
         post.liked = post.liked | {current_user.id}
     session.commit()
+    return 'OK'
 
 
 @app.route('/search/', methods=["POST"])
@@ -357,13 +367,11 @@ def search(keyword):
 
 
 @login_required
-@app.route('/action/', methods=['POST'])
-def action():
-    if request.form['action'] == 'getusercard':
-        pass
-    elif request.form['action'] == 'getcuruserid':
-        return str(current_user.id)
-    return 'OK'
+@app.route('/is_authenticated', methods=['POST'])
+def is_authenticated():
+    if not current_user.is_authenticated:
+        abort(401)
+    return 'YES'
 
 
 @app.route('/uploads/<filename>')
