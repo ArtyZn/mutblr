@@ -1,0 +1,10 @@
+{% extends "main.html" %}
+
+{% block title %}Подписки{% endblock %}
+{% block content_info %}Ваши подписки{% endblock %}
+{% block script %}{{ url_for('static', filename='js/blogs.js') }}{% endblock %}
+{% block style %}{{ url_for('static', filename='css/blogs.css') }}{% endblock %}
+
+{% block content %}
+<div id="blogs"></div>
+{% endblock %}

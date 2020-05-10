@@ -178,7 +178,21 @@ def feed():
 
 @app.route('/blogs/', methods=['GET', 'POST'])
 def blogs():
-    return redirect('/')
+    if request.method == 'GET':
+        return render_template('blogs.html')
+    else:
+        session = db_session.create_session()
+        out = ''
+        offset = request.form['offset'] if request.form['offset'] else 0
+        if current_user.is_authenticated:
+            subscribed_to = current_user.subscribed_to
+            i = 0
+            for user_id in subscribed_to:
+                out += render_template('blog.html', user=session.query(User).get(user_id))
+                i += 1
+                if i == 20:
+                    return out
+        return out
 
 
 @app.route('/settings/', methods=['GET', 'POST'])
@@ -231,24 +245,52 @@ def user(user_id):
 
 
 @login_required
+@app.route('/user/<int:user_id>/subscribe', methods=["POST"])
+def user_subscribe(user_id):
+    session = db_session.create_session()
+    target = session.query(User).get(user_id)
+    user = session.query(User).get(current_user.id)
+    if target:
+        if user.id in target.subscribed_by and target.id in user.subscribed_to:
+            target.subscribed_by = target.subscribed_by ^ {user.id}
+            user.subscribed_to = user.subscribed_to ^ {target.id}
+        else:
+            target.subscribed_by = target.subscribed_by | {user.id}
+            user.subscribed_to = user.subscribed_to | {target.id}
+        session.commit()
+
+
+@login_required
 @app.route('/post/', methods=["GET", "POST"])
 def send_post():
     form = PostForm()
     if form.validate_on_submit():
         session = db_session.create_session()
-        post = Post(author=current_user.id, content=form.content.data, tags=form.tags.data if form.tags.data else '', is_private=form.is_private.data)
+        post = Post(author=current_user.id, content=form.content.data, tags=' ' + form.tags.data if form.tags.data else '', is_private=form.is_private.data)
         if form.reply_to.data:
             reply_post = session.query(Post).get(int(form.reply_to.data))
             if reply_post and reply_post.is_private and not (reply_post.user == current_user or reply_post.reply_to.user == current_user):
-                post.reply_to_id = session.query(Post).order_by(Post.id.desc()).first().id + 1
+                lpost = session.query(Post).order_by(Post.id.desc()).first()
+                if lpost:
+                    post.reply_to_id = lpost.id + 1
+                else:
+                    post.reply_to_id = 1
             elif reply_post:
                 post.reply_to_id = reply_post.id
                 if reply_post.is_private:
                     post.is_private = True
             else:
-                post.reply_to_id = session.query(Post).order_by(Post.id.desc()).first().id + 1
+                lpost = session.query(Post).order_by(Post.id.desc()).first()
+                if lpost:
+                    post.reply_to_id = lpost.id + 1
+                else:
+                    post.reply_to_id = 1
         else:
-            post.reply_to_id = session.query(Post).order_by(Post.id.desc()).first().id + 1
+            lpost = session.query(Post).order_by(Post.id.desc()).first()
+            if lpost:
+                post.reply_to_id = lpost.id + 1
+            else:
+                post.reply_to_id = 1
 
         session.add(post)
         session.commit()
@@ -259,7 +301,11 @@ def send_post():
 def post(post_id):
     session = db_session.create_session()
     post = session.query(Post).get(post_id)
+    if not post:
+        abort(404)
     posts = []
+    if post.is_private and post.author != current_user.id and post.reply_to.author != current_user.id:
+        abort(403)
     while post.id != post.reply_to_id:
         posts.append(post)
         post = post.reply_to
@@ -283,47 +329,39 @@ def post_delete(post_id):
     return ''
 
 
+@login_required
+@app.route('/post/<int:post_id>/like', methods=['POST'])
+def post_like(post_id):
+    session = db_session.create_session()
+    post = session.query(Post).get(post_id)
+    if not post:
+        abort(404)
+    if current_user.id in post.liked:
+        post.liked = post.liked ^ {current_user.id}
+    else:
+        post.liked = post.liked | {current_user.id}
+    session.commit()
+
+
+@app.route('/search/', methods=["POST"])
+def search_empty():
+    return "No results!"
+
+
+@app.route('/search/<string:keyword>', methods=["POST"])
+def search(keyword):
+    session = db_session.create_session()
+    users = session.query(User).filter(User.username.like(f'%{keyword}%')).limit(3)
+    posts = session.query(Post).filter(Post.tags.like(f'% {keyword}%'), Post.is_private != True).limit(3)
+    return render_template('searchpanel.html', users=users, posts=posts)
+
+
 @app.route('/action/', methods=['POST'])
 def action():
-    if request.form['action'] == 'like':
-        if not current_user.is_authenticated:
-            abort(403)
-        if 'post_id' in request.form:
-            session = db_session.create_session()
-            post = session.query(Post).get(request.form['post_id'])
-            if not post:
-                abort(404)
-            if current_user.id in post.liked:
-                post.liked = post.liked ^ {current_user.id}
-            else:
-                post.liked = post.liked | {current_user.id}
-            session.commit()
-    elif request.form['action'] == 'getusercard':
+    if request.form['action'] == 'getusercard':
         pass
-    elif request.form['action'] == 'subscribe':
-        if request.form['user_id']:
-            session = db_session.create_session()
-            target = session.query(User).get(int(request.form['user_id']))
-            user = session.query(User).get(current_user.id)
-            if target:
-                if user.id in target.subscribed_by and target.id in user.subscribed_to:
-                    target.subscribed_by = target.subscribed_by ^ {user.id}
-                    user.subscribed_to = user.subscribed_to ^ {target.id}
-                else:
-                    target.subscribed_by = target.subscribed_by | {user.id}
-                    user.subscribed_to = user.subscribed_to | {target.id}
-                session.commit()
     elif request.form['action'] == 'getcuruserid':
         return str(current_user.id)
-    elif request.form['action'] == 'search':
-        if request.form['keyword']:
-            word = request.form['keyword']
-            session = db_session.create_session()
-            users = session.query(User).filter(User.username.like(f'%{word}%')).limit(3)
-            posts = session.query(Post).filter(Post.tags.like(f'% {word}%'), Post.is_private != True).limit(3)
-            return render_template('searchpanel.html', users=users, posts=posts)
-        else:
-            abort(400)
     return 'OK'
 
 

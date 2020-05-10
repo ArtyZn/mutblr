@@ -10,12 +10,8 @@ function login_prompt() {
 
 function subscribe(user_id) {
   $.ajax({
-    url: "/action/",
-    method: "post",
-    data: {
-      action: "subscribe",
-      user_id: user_id
-    }
+    url: "/user/" + user_id + "/subscribe",
+    method: "post"
   });
 }
 
@@ -41,13 +37,9 @@ function login_check() {
 function like(post_id) {
   login_check();
   $.ajax({
-    url: "/action/",
+    url: "/post/" + post_id + "/like",
     method: "post",
-    data: {
-      action: "like",
-      post_id: post_id
-    }
-  })
+  });
   $('#post-' + post_id + ' .likebtn').toggleClass('liked');
 }
 
@@ -82,14 +74,9 @@ $(document).ready(function () {
   });
   $('#search-input').on('input', function (e) {
     $.ajax({
-      url: "/action/",
+      url: "/search/" + e.target.value,
       method: "post",
-      data: {
-        action: 'search',
-        keyword: e.target.value
-      },
       success: function (e) {
-        console.log(e);
         $('#search-panel')[0].innerHTML = e;
       },
       error: function (e) {

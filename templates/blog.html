@@ -1,0 +1,17 @@
+<div class="blog" id="blog-{{ user.id }}">
+  <div class="blog-author rounded-circle">
+    <img src="/uploads/{{ user.pfp }}">
+  </div>
+  <div class="blog-content rounded text-break">
+    <div class="blog-info">
+      <a class="username" href="/user/{{ user.id }}">{{ user.username }}</a>
+      <a class="blog-options fas fa-ellipsis-h" data-toggle="dropdown"></a>
+      <div class="dropdown-menu">
+        <a class="dropdown-item" onclick="subscribe({{ user.id }})">Отписаться</a>
+      </div>
+    </div>
+    <div class="blog-text">
+      {{ user.about }}
+    </div>
+  </div>
+</div>
