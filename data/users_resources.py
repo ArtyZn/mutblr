@@ -29,6 +29,10 @@ def abort_if_user_not_found(user_id):
 
 class UsersResource(Resource):
     def get(self, user_id):
+        parser = reqparse.RequestParser()
+        parser.add_argument('token', required=True, type=str)
+        args = parser.parse_args()
+        abort_if_unauthorized(args['token'])
         abort_if_user_not_found(user_id)
         session = db_session.create_session()
         user = session.query(User).get(user_id)
@@ -44,19 +48,16 @@ class UsersResource(Resource):
             abort_if_user_not_found(user_id)
             session = db_session.create_session()
             target = session.query(User).get(user_id)
-            user = get_user(args['token'])
-            session.query(User).get(target.id).subscribed_by = session.query(User).get(target.id).subscribed_by | {user.id}
-            session.query(User).get(user.id).subscribed_to = session.query(User).get(user.id).subscribed_to | {target.id}
-            session.commit()
-            return jsonify({'success': 'OK'})
-        elif args['action'] == 'unsubscribe':
-            abort_if_user_not_found(user_id)
-            session = db_session.create_session()
-            target = session.query(User).get(user_id)
-            user = get_user(args['token'])
-            session.query(User).get(target.id).subscribed_by = session.query(User).get(target.id).subscribed_by ^ {user.id}
-            session.query(User).get(user.id).subscribed_to = session.query(User).get(user.id).subscribed_to ^ {target.id}
+            user = session.query(User).filter(User.api_token == args['token']).first()
+            if user_id == user.id:
+                abort(400, BAD_PARAMETER='user_id')
+            if user.id in target.subscribed_by and target.id in user.subscribed_to:
+                target.subscribed_by = target.subscribed_by ^ {user.id}
+                user.subscribed_to = user.subscribed_to ^ {target.id}
+            else:
+                target.subscribed_by = target.subscribed_by | {user.id}
+                user.subscribed_to = user.subscribed_to | {target.id}
             session.commit()
             return jsonify({'success': 'OK'})
         else:
-            return jsonify({'BAD_PARAMETER': 'action'})
+            abort(400, BAD_PARAMETER='user_id')
