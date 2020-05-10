@@ -356,6 +356,7 @@ def search(keyword):
     return render_template('searchpanel.html', users=users, posts=posts)
 
 
+@login_required
 @app.route('/action/', methods=['POST'])
 def action():
     if request.form['action'] == 'getusercard':
