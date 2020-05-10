@@ -15,7 +15,7 @@ class Post(SqlAlchemyBase, SerializerMixin):
     author = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True)
     content = Column(String)
     attachments = Column(PickleType, nullable=True, default=[])
-    tags = Column(PickleType, nullable=True, index=True, default=set())
+    tags = Column(String, nullable=True, default='')
     liked = Column(PickleType, nullable=True, default=set())
 
     user = orm.relation('User')

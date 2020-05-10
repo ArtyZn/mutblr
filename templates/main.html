@@ -33,10 +33,16 @@
             <div class="input-group-prepend">
               <span class="input-group-text fas fa-search" style="font-size: 24; background-color: white;"></span>
             </div>
-            <input type="text" class="form-control" placeholder="Поиск в Mutblr">
+            <input id='search-input' type="text" class="form-control" placeholder="Поиск в Mutblr" data-toggle="dropdown">
+            <div class="dropdown-menu" id='search-panel' style="width: 350px;">
+
+            </div>
           </div>
         </div>
         <div id="nav-menu">
+          {% if current_user.is_authenticated %}
+          <a onclick="new_post()" class="fas fa-pencil-alt"></a>
+          {% endif %}
           <a href="/" class="fas fa-home"></a>
           <a href="/feed/" class="far fa-newspaper"></a>
           <a href="/blogs/" class="fas fa-user-friends"></a>
@@ -82,18 +88,7 @@
                   <img src="/uploads/{{ current_user.pfp }}" class="rounded-circle" style="width: 50px; height: 50px;">
                   <span style="font-weight: 700; margin-left: 10px;">{{ current_user.username }}</span>
                 </div>
-                <form action="#" id="post-modal-form">
-                  <div class="form-group">
-                    <textarea id="post-modal-form-content" class="form-control w-100"></textarea>
-                  </div>
-                  <div class="form-group form-check">
-                    <input type="checkbox" class="form-check-input">
-                    <label class="form-check-label">Приватный пост</label>
-                  </div>
-                </form>
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-primary" onclick="send_post()">Отправить</button>
+                <iframe src="/post/" class='w-100' frameborder="0" scrolling="no" id="post-iframe"></iframe>
               </div>
             </div>
           </div>

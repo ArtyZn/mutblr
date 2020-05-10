@@ -33,6 +33,15 @@
   background-color: lightgray;
 }
 
+.post-info > .username {
+  color: black;
+}
+
+.post-info > .username:hover {
+  text-decoration: none;
+}
+
+
 .post-options {
 
 }

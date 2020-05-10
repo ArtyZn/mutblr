@@ -1,0 +1,34 @@
+{% extends "main.html" %}
+
+{% block title %}Пост №{{ posts[0].id }}{% endblock %}
+{% block content_info %}Пост №{{ posts[0].id }}{% endblock %}
+
+{% block content %}
+<div id="posts">
+  {% for i in range(len(posts)) %}
+  <div class="post" id="post-{{ posts[i].id }}" {% if i != 0 %} style="margin-top: -75px;"{% endif %}>
+    <div class="post-author rounded-circle">
+      <img src="/uploads/{{ posts[i].user.pfp }}">
+    </div>
+    <div class="post-content {% if i == 0 %}rounded-top{% endif %} {% if i == len(posts) - 1 %}rounded-bottom{% endif %} text-break">
+      <div class="post-info">
+        <a class="username" href="/user/{{ posts[i].author }}">{{ posts[i].user.username }}</a> {% if posts[i].is_private %}(private){% endif %}
+        <a class="post-options fas fa-ellipsis-h" data-toggle="dropdown"></a>
+        <div class="dropdown-menu">
+          <a class="dropdown-item" href="/post/{{ posts[i].id }}">Прочитать полностью</a>
+          {% if current_user.id == posts[i].author %}<a class="dropdown-item" onclick="delete_post({{ posts[i].id }})">Удалить</a>{% endif %}
+        </div>
+      </div>
+      <div class="post-text">
+        {{ posts[i].content }}
+      </div>
+      <div class="post-footer">
+        <span>{{ len(posts[i].liked) }} лайков</span>
+        <a class="fas fa-heart likebtn {% if current_user.id in posts[i].liked %}liked{% endif %}" onclick="like({{ posts[i].id }})"></a>
+        <a class="fas fa-reply" onclick="reply({{ posts[i].id }})"></a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

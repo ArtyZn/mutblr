@@ -1,0 +1,19 @@
+{% if not posts.first() and not users.first() %}
+No results!
+{% endif %}
+{% for user in users %}
+<a class="dropdown-item text-truncate" href="/user/{{ user.id }}">
+  <img src="/uploads/{{ user.pfp }}" class='rounded-circle' style='width: 20px; height: 20px'>
+  <span style='font-weight: 700;'>{{ user.username }}: </span>
+  <span class='font-weight-light'>{{ user.about }}</span>
+</a>
+{% endfor %}
+{% if posts.first() and users.first() %}
+<div class='w-100' style="border-bottom: 1px solid black"></div>
+{% endif %}
+{% for post in posts %}
+<a class="dropdown-item text-truncate" href="/post/{{ post.id }}">
+  <span style='font-weight: 700;'>{{ post.user.username }}: </span>
+  <span class='font-weight-light'>{{ post.content }}</span>
+</a>
+{% endfor %}
