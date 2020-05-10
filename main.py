@@ -18,6 +18,7 @@ from PIL import Image
 import datetime
 import json
 import io
+from hashlib import sha256
 
 
 app = flask.Flask(__name__)
@@ -109,6 +110,7 @@ def register():
             return render_template('register.html', form=form)
         user = User(email=form.email.data, username=form.username.data)
         user.set_password(form.password.data)
+        user.api_token = sha256(bytes(form.email.data + sha256(bytes(form.password.data, encoding='utf-8')).hexdigest(), encoding='utf-8')).hexdigest()  # Это должно быть достаточно безопасным
         session.add(user)
         session.commit()
         login_user(user, remember=form.remember_me.data)

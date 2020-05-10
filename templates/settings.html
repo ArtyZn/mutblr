@@ -49,4 +49,5 @@
   <a class="btn btn-warning" href="https://oauth.yandex.ru/authorize?response_type=token&client_id=ed85afc1f5ad48ed97373e897b2d3320">Привязать аккаунт Яндекс</a>
   <a class="btn btn-danger" href="/logout" style="float: right;">Выйти аз аккаунта</a>
 </form>
+<div style="position: absolute; bottom: 0; left: 0;">Ваш API Token: {{ current_user.api_token }}</div>
 {% endblock %}
